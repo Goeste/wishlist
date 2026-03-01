@@ -7,6 +7,7 @@ import { sendTest } from "$lib/server/email";
 import { settingSchema } from "$lib/server/validations";
 import { z } from "zod";
 import { requireRole } from "$lib/server/auth";
+import { priceUpdateScheduler } from "$lib/server/scheduler";
 
 export const load: PageServerLoad = async () => {
     await requireRole(Role.ADMIN);
@@ -46,11 +47,14 @@ export const actions: Actions = {
         const newConfig = generateConfig(configData.data);
         await writeConfig(newConfig);
 
+        // Restart scheduler so new interval/time takes effect immediately
+        priceUpdateScheduler.restart();
+
         return { action: "settings", success: true };
     }
 };
 
-const generateConfig = (configData: z.infer<typeof settingSchema>) => {
+const generateConfig = (configData: z.infer<typeof settingSchema>): Config => {
     const smtpConfig: SMTPConfig = configData.enableSMTP
         ? {
               enable: true,
@@ -95,7 +99,13 @@ const generateConfig = (configData: z.infer<typeof settingSchema>) => {
               disableEmailVerification: configData.oidcDisableEmailVerification
           };
 
-    const newConfig: Config = {
+    const priceUpdateConfig: PriceUpdateConfig = {
+        enable: configData.enablePriceUpdate,
+        intervalHours: configData.priceUpdateIntervalHours,
+        scheduledTime: configData.priceUpdateScheduledTime
+    };
+
+    return {
         enableSignup: configData.enableSignup,
         suggestions: {
             enable: configData.enableSuggestions,
@@ -116,8 +126,7 @@ const generateConfig = (configData: z.infer<typeof settingSchema>) => {
         defaultGroup: configData.defaultGroup,
         enableDefaultListCreation: configData.enableDefaultListCreation,
         allowPublicLists: configData.allowPublicLists,
-        oidc: oidcConfig
+        oidc: oidcConfig,
+        priceUpdate: priceUpdateConfig
     };
-
-    return newConfig;
 };
