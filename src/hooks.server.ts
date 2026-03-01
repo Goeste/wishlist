@@ -96,14 +96,3 @@ function transformForLang(html: string, lang: Lang) {
 function isPrivateRoute(routeId: RouteId | null) {
     return routeId && !nonPrivateRoutes.includes(routeId);
 }
-```
-
----
-
-Jetzt brauche ich noch die `validations.ts` und die `app.d.ts` (für den Config-Typ). Bitte schick mir:
-```
-https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/lib/server/validations.ts
-https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/app.d.ts
-https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/lib/components/admin/Settings/index.ts
-https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/lib/components/admin/Settings/General.svelte
-https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/package.json
