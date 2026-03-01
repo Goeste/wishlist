@@ -2,7 +2,7 @@
     import { enhance } from "$app/forms";
     import { goto } from "$app/navigation";
     import { page } from "$app/state";
-    import { Email, General, Security, options } from "$lib/components/admin/Settings";
+    import { Email, General, Security, PriceUpdate, options } from "$lib/components/admin/Settings";
     import { onMount } from "svelte";
     import type { PageProps } from "./$types";
     import { getFormatter } from "$lib/i18n";
@@ -81,6 +81,7 @@
             <General {config} {groups} hidden={currentHash !== options[0].hash} />
             <Email {config} hidden={currentHash !== options[1].hash} {sending} />
             <Security {config} hidden={currentHash !== options[2].hash} />
+            <PriceUpdate {config} hidden={currentHash !== options[3].hash} />
 
             {#if page.form?.error}
                 <span>{page.form.error}</span>
