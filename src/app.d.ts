@@ -1,5 +1,4 @@
 import type { HTMLAttributes } from "svelte/elements";
-import type { User } from "$lib/generated/prisma/client";
 
 declare global {
     // See https://kit.svelte.dev/docs/types#app
@@ -23,61 +22,6 @@ declare global {
     // Date built
     declare const __LASTMOD__: string;
 
-    type LocalUser = Omit<User, "hashedPassword">;
-
-    interface SMTPConfig {
-        enable: boolean;
-        host?: string;
-        port?: number;
-        user?: string;
-        pass?: string;
-        from?: string;
-        fromName?: string;
-    }
-
-    interface OIDCConfig {
-        enable: boolean;
-        discoveryUrl?: string;
-        clientId?: string;
-        clientSecret?: string;
-        providerName?: string;
-        autoRedirect?: boolean;
-        autoRegister?: boolean;
-        enableSync?: boolean;
-        disableEmailVerification?: boolean;
-    }
-
-    interface PriceUpdateConfig {
-        enable: boolean;
-        intervalHours: number;
-        scheduledTime?: string;
-    }
-
-    interface Config {
-        enableSignup: boolean;
-        suggestions: {
-            enable: boolean;
-            method: string;
-        };
-        smtp: SMTPConfig;
-        claims: {
-            showName: boolean;
-            showNameAcrossGroups: boolean;
-            showForOwner: boolean;
-            requireEmail: boolean;
-        };
-        listMode: string;
-        security: {
-            passwordStrength: number;
-            disablePasswordLogin: boolean;
-        };
-        defaultGroup?: string;
-        enableDefaultListCreation: boolean;
-        allowPublicLists: boolean;
-        oidc: OIDCConfig;
-        priceUpdate: PriceUpdateConfig;
-    }
-
     interface IconifyIconHTMLElement extends HTMLAttributes<HTMLElement> {
         icon: string;
         width?: string | number;
@@ -94,6 +38,16 @@ declare global {
         interface IntrinsicElements {
             "iconify-icon": IconifyIconHTMLElement;
         }
+    }
+
+    interface PriceUpdateConfig {
+        enable: boolean;
+        intervalHours: number;
+        scheduledTime: string | null;
+    }
+
+    interface Config {
+        priceUpdate: PriceUpdateConfig;
     }
 }
 
