@@ -1,4 +1,5 @@
 import type { HTMLAttributes } from "svelte/elements";
+import type { User } from "$lib/generated/prisma/client";
 
 declare global {
     // See https://kit.svelte.dev/docs/types#app
@@ -22,15 +23,7 @@ declare global {
     // Date built
     declare const __LASTMOD__: string;
 
-    interface LocalUser {
-        id: string;
-        username: string;
-        name: string;
-        email: string;
-        picture: string | null;
-        roleId: number;
-        preferredLanguage: string | null;
-    }
+    type LocalUser = Omit<User, "hashedPassword">;
 
     interface SMTPConfig {
         enable: boolean;
