@@ -53,7 +53,7 @@ export const actions: Actions = {
     }
 };
 
-const generateConfig = (configData: z.infer<typeof settingSchema>) => {
+const generateConfig = (configData: z.infer<typeof settingSchema>): Config => {
     const smtpConfig: SMTPConfig = configData.enableSMTP
         ? {
               enable: true,
