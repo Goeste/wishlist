@@ -41,6 +41,7 @@ declare global {
 
     interface Config {
         priceUpdate: PriceUpdateConfig;
+        [key: string]: unknown;
     }
 }
 
