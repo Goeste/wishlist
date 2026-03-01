@@ -167,9 +167,7 @@ export const getItemUpdateSchema = async () => {
 };
 
 export const extractFormData = (formData: FormData) => {
-    const data = [...formData.entries().filter(([_k, v]) => v.toString())].reduce
-        Record<string, FormDataEntryValue | FormDataEntryValue[]>
-    >(
+    const data = [...formData.entries().filter(([_k, v]) => v.toString())].reduce<Record<string, FormDataEntryValue | FormDataEntryValue[]>>(
         (data, [key, value]) => ({
             ...data,
             [key]: key in data ? (Array.isArray(data[key]) ? [...data[key], value] : [data[key], value]) : value
