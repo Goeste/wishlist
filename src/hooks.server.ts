@@ -9,7 +9,11 @@ import {
 } from "$lib/server/auth";
 import { logger } from "$lib/server/logger";
 import { loadLocale } from "$lib/server/validations";
+import { priceUpdateScheduler } from "$lib/server/scheduler";
 import type { Handle, HandleServerError } from "@sveltejs/kit";
+
+// Start the price update scheduler once when the server initialises.
+priceUpdateScheduler.start();
 
 export const handle: Handle = async ({ event, resolve }) => {
     let lang = getClosestAvailableLocaleFromHeader(event.request.headers.get("accept-language"));
@@ -92,3 +96,14 @@ function transformForLang(html: string, lang: Lang) {
 function isPrivateRoute(routeId: RouteId | null) {
     return routeId && !nonPrivateRoutes.includes(routeId);
 }
+```
+
+---
+
+Jetzt brauche ich noch die `validations.ts` und die `app.d.ts` (für den Config-Typ). Bitte schick mir:
+```
+https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/lib/server/validations.ts
+https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/app.d.ts
+https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/lib/components/admin/Settings/index.ts
+https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/src/lib/components/admin/Settings/General.svelte
+https://raw.githubusercontent.com/Goeste/wishlist/refs/heads/main/package.json
