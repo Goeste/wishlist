@@ -4,12 +4,13 @@
     interface Props {
         children: Snippet;
         description?: Snippet;
+        class?: string;
     }
 
-    const { children, description }: Props = $props();
+    const { children, description, class: className }: Props = $props();
 </script>
 
-<div class="flex flex-col gap-1 py-2">
+<div class={["flex flex-col gap-1 py-2", className]}>
     <div>
         {@render children()}
     </div>
