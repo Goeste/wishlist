@@ -22,6 +22,16 @@ declare global {
     // Date built
     declare const __LASTMOD__: string;
 
+    interface LocalUser {
+        id: string;
+        username: string;
+        name: string;
+        email: string;
+        picture: string | null;
+        roleId: number;
+        preferredLanguage: string | null;
+    }
+
     interface SMTPConfig {
         enable: boolean;
         host?: string;
@@ -73,16 +83,6 @@ declare global {
         allowPublicLists: boolean;
         oidc: OIDCConfig;
         priceUpdate: PriceUpdateConfig;
-    }
-
-    interface LocalUser {
-        id: string;
-        username: string;
-        name: string;
-        email: string;
-        picture: string | null;
-        roleId: number;
-        preferredLanguage: string | null;
     }
 
     interface IconifyIconHTMLElement extends HTMLAttributes<HTMLElement> {
