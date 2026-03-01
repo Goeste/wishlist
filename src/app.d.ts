@@ -38,11 +38,6 @@ declare global {
         intervalHours: number;
         scheduledTime: string | null;
     }
-
-    interface Config {
-        priceUpdate: PriceUpdateConfig;
-        [key: string]: unknown;
-    }
 }
 
 type IconifyIconLoaderCallback = (
