@@ -5,18 +5,20 @@ import metascraperShopping from "./shopping";
 
 const scraper = metascraper([metascraperShopping()]);
 
+interface FetchedPrice {
+    value: number;
+    currency: string;
+}
+
 /**
- * Fetches the current price for a single URL using metascraper.
- * Returns null if price could not be determined.
+ * Fetches the current price for a URL using the existing metascraper shopping module.
+ * Returns null if price or currency could not be determined.
  */
-async function fetchPriceForUrl(
-    url: string
-): Promise<{ value: number; currency: string } | null> {
+async function fetchPriceForUrl(url: string): Promise<FetchedPrice | null> {
     try {
         const response = await fetch(url, {
             headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (compatible; Wishlist-PriceBot/1.0)"
+                "User-Agent": "Mozilla/5.0 (compatible; Wishlist-PriceBot/1.0)"
             },
             signal: AbortSignal.timeout(15_000)
         });
@@ -28,7 +30,6 @@ async function fetchPriceForUrl(
 
         if (!metadata.price || !metadata.currency) return null;
 
-        // price from scraper is a string like "19.99"
         const numericValue = Math.round(parseFloat(metadata.price) * 100);
         if (isNaN(numericValue)) return null;
 
@@ -41,15 +42,12 @@ async function fetchPriceForUrl(
 
 /**
  * Runs the automatic price update for all unclaimed items that have a URL.
- * Only updates the DB if the price actually changed.
- * Returns the number of items updated.
+ * Only writes to the DB when the price actually changed.
+ * Returns the number of items whose price was updated.
  */
 export async function runPriceUpdate(): Promise<number> {
     logger.info("price-updater: starting automatic price update run");
 
-    // Find all items that:
-    // - have a URL
-    // - are NOT claimed (no ItemClaim rows for them)
     const items = await client.item.findMany({
         where: {
             url: { not: null },
@@ -70,46 +68,35 @@ export async function runPriceUpdate(): Promise<number> {
     let updatedCount = 0;
 
     for (const item of items) {
-        // url is guaranteed non-null by the where clause above
         const fetched = await fetchPriceForUrl(item.url!);
         if (!fetched) continue;
 
         const currentValue = item.itemPrice?.value ?? null;
         const currentCurrency = item.itemPrice?.currency ?? null;
 
-        // Skip if price hasn't changed
-        if (
-            currentValue === fetched.value &&
-            currentCurrency === fetched.currency
-        ) {
+        if (fetched.value === currentValue && fetched.currency === currentCurrency) {
             continue;
         }
 
-        // Upsert the ItemPrice record and link it to the item
-        const upsertedPrice = await client.itemPrice.upsert({
-            where: { id: item.itemPriceId ?? "" },
-            create: {
-                value: fetched.value,
-                currency: fetched.currency
-            },
-            update: {
-                value: fetched.value,
-                currency: fetched.currency
-            }
-        });
-
-        // If item didn't have an itemPriceId yet, link it now
-        if (!item.itemPriceId) {
+        if (item.itemPriceId) {
+            await client.itemPrice.update({
+                where: { id: item.itemPriceId },
+                data: { value: fetched.value, currency: fetched.currency }
+            });
+        } else {
+            const created = await client.itemPrice.create({
+                data: { value: fetched.value, currency: fetched.currency }
+            });
             await client.item.update({
                 where: { id: item.id },
-                data: { itemPriceId: upsertedPrice.id }
+                data: { itemPriceId: created.id }
             });
         }
 
         updatedCount++;
         logger.info(
-            { itemId: item.id, old: currentValue, new: fetched.value, currency: fetched.currency },
-            "price-updater: updated price for item"
+            { itemId: item.id, oldValue: currentValue, newValue: fetched.value, currency: fetched.currency },
+            "price-updater: price changed, updated"
         );
     }
 
