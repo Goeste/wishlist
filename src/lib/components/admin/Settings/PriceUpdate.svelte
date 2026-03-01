@@ -1,10 +1,10 @@
 <script lang="ts">
-    import SettingsGroup from "../SettingsGroup.svelte";
-    import Setting from "../Setting.svelte";
+    import SettingsGroup from "./SettingsGroup.svelte";
+    import Setting from "./Setting.svelte";
     import { getFormatter } from "$lib/i18n";
 
     interface Props {
-        config: Pick<Config, "priceUpdate">;
+        config: Config;
         hidden?: boolean;
     }
 
