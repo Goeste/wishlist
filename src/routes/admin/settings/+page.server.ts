@@ -47,14 +47,13 @@ export const actions: Actions = {
         const newConfig = generateConfig(configData.data);
         await writeConfig(newConfig);
 
-        // Restart scheduler so new interval/time takes effect immediately
         priceUpdateScheduler.restart();
 
         return { action: "settings", success: true };
     }
 };
 
-const generateConfig = (configData: z.infer<typeof settingSchema>): Config => {
+const generateConfig = (configData: z.infer<typeof settingSchema>) => {
     const smtpConfig: SMTPConfig = configData.enableSMTP
         ? {
               enable: true,
@@ -102,7 +101,7 @@ const generateConfig = (configData: z.infer<typeof settingSchema>): Config => {
     const priceUpdateConfig: PriceUpdateConfig = {
         enable: configData.enablePriceUpdate,
         intervalHours: configData.priceUpdateIntervalHours,
-        scheduledTime: configData.priceUpdateScheduledTime
+        scheduledTime: configData.priceUpdateScheduledTime ?? null
     };
 
     return {
