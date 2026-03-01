@@ -7,10 +7,6 @@ permissions:
   actions: write
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-  release:
-    types: [published]
 
 jobs:
   build_and_push_web:
