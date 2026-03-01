@@ -38,6 +38,63 @@ declare global {
         intervalHours: number;
         scheduledTime: string | null;
     }
+
+    interface SMTPConfig {
+        enable: boolean;
+        host?: string;
+        port?: number;
+        user?: string;
+        pass?: string;
+        from?: string;
+        fromName?: string;
+    }
+
+    interface OIDCConfig {
+        enable: boolean;
+        discoveryUrl?: string;
+        clientId?: string;
+        clientSecret?: string;
+        providerName?: string;
+        autoRedirect?: boolean;
+        autoRegister?: boolean;
+        enableSync?: boolean;
+        disableEmailVerification?: boolean;
+        ready?: boolean;
+    }
+
+    interface Config {
+        enableSignup?: boolean;
+        suggestions: {
+            enable: boolean;
+            method: string;
+        };
+        smtp: SMTPConfig;
+        claims: {
+            showName: boolean;
+            showNameAcrossGroups: boolean;
+            showForOwner: boolean;
+            requireEmail: boolean;
+        };
+        listMode: string;
+        security: {
+            passwordStrength: number;
+            disablePasswordLogin: boolean;
+        };
+        defaultGroup?: string;
+        enableDefaultListCreation: boolean;
+        allowPublicLists: boolean;
+        oidc: OIDCConfig;
+        priceUpdate: PriceUpdateConfig;
+    }
+
+    type LocalUser = {
+        id: string;
+        username: string;
+        name: string;
+        email: string | null;
+        roleId: string;
+        oauthId: string | null;
+    };
 }
 
 type IconifyIconLoaderCallback = (
