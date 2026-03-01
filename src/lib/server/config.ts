@@ -110,7 +110,7 @@ const getDefaultConfig = (): Config => ({
     priceUpdate: {
         enable: false,
         intervalHours: 24,
-        scheduledTime: undefined
+        scheduledTime: null
     }
 });
 
