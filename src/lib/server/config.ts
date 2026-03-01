@@ -31,7 +31,10 @@ enum ConfigKey {
     OIDC_AUTO_REDIRECT = "oidc.autoRedirect",
     OIDC_AUTO_REGISTER = "oidc.autoRegister",
     OIDC_ENABLE_SYNC = "oidc.enableSync",
-    OIDC_DISABLE_EMAIL_VERIFICATION = "oidc.disableEmailVerification"
+    OIDC_DISABLE_EMAIL_VERIFICATION = "oidc.disableEmailVerification",
+    PRICE_UPDATE_ENABLE = "priceUpdate.enable",
+    PRICE_UPDATE_INTERVAL_HOURS = "priceUpdate.intervalHours",
+    PRICE_UPDATE_SCHEDULED_TIME = "priceUpdate.scheduledTime"
 }
 
 type Transformer<T> = (val: string | null, shouldMask?: boolean) => T;
@@ -73,7 +76,10 @@ const transformers: Record<ConfigKey, Transformer<unknown>> = {
     "oidc.autoRedirect": booleanTransformer,
     "oidc.autoRegister": booleanTransformer,
     "oidc.enableSync": booleanTransformer,
-    "oidc.disableEmailVerification": booleanTransformer
+    "oidc.disableEmailVerification": booleanTransformer,
+    "priceUpdate.enable": booleanTransformer,
+    "priceUpdate.intervalHours": numberTransformer,
+    "priceUpdate.scheduledTime": stringTransformer
 };
 
 const getDefaultConfig = (): Config => ({
@@ -100,6 +106,11 @@ const getDefaultConfig = (): Config => ({
     allowPublicLists: false,
     oidc: {
         enable: false
+    },
+    priceUpdate: {
+        enable: false,
+        intervalHours: 24,
+        scheduledTime: undefined
     }
 });
 
