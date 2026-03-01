@@ -83,7 +83,15 @@ export const settingSchema = z.object({
     oidcAutoRedirect: z.coerce.boolean().default(false),
     oidcAutoRegister: z.coerce.boolean().default(false),
     oidcEnableSync: z.coerce.boolean().default(false),
-    oidcDisableEmailVerification: z.coerce.boolean().default(false)
+    oidcDisableEmailVerification: z.coerce.boolean().default(false),
+    enablePriceUpdate: z.coerce.boolean().default(false),
+    priceUpdateIntervalHours: z.coerce.number().int().min(1).max(8760).default(24),
+    priceUpdateScheduledTime: z
+        .string()
+        .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Expected HH:MM format")
+        .optional()
+        .or(z.literal(""))
+        .transform((v) => (v === "" ? undefined : v))
 });
 
 export const publicListCreateSchema = z.object({
@@ -159,7 +167,7 @@ export const getItemUpdateSchema = async () => {
 };
 
 export const extractFormData = (formData: FormData) => {
-    const data = [...formData.entries().filter(([_k, v]) => v.toString())].reduce<
+    const data = [...formData.entries().filter(([_k, v]) => v.toString())].reduce
         Record<string, FormDataEntryValue | FormDataEntryValue[]>
     >(
         (data, [key, value]) => ({
