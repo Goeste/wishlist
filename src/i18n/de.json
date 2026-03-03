@@ -137,7 +137,9 @@
         "price-update-interval-hours": "Aktualisierungsintervall (Stunden)",
         "price-update-interval-hours-tooltip": "Wie oft Preise aktualisiert werden sollen. Minimum 1 Stunde, Maximum 8760 Stunden (1 Jahr).",
         "price-update-scheduled-time": "Geplante Uhrzeit (HH:MM)",
-        "price-update-scheduled-time-tooltip": "Optional: Aktualisierung zu einer bestimmten Tageszeit ausführen. Leer lassen, um nur das Intervall zu verwenden."
+        "price-update-scheduled-time-tooltip": "Optional: Aktualisierung zu einer bestimmten Tageszeit ausführen. Leer lassen, um nur das Intervall zu verwenden.",
+        "price-update-run-now": "Preise jetzt aktualisieren",
+        "price-update-manual-toast": "{updated} Preis(e) aktualisiert"
     },
     "wishes": {
         "filter": "Filter",
