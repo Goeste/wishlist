@@ -4,7 +4,7 @@
     interface Props {
         children: Snippet;
         description?: Snippet;
-        class?: string | (string | boolean | null | undefined)[];
+        class?: string | (string | false | null | undefined)[];
     }
 
     const { children, description, class: className }: Props = $props();
