@@ -8,7 +8,7 @@ import { settingSchema } from "$lib/server/validations";
 import { z } from "zod";
 import { requireRole } from "$lib/server/auth";
 import { priceUpdateScheduler } from "$lib/server/scheduler";
-import { updatePrices } from "$lib/server/price-updater";
+import { runPriceUpdate } from "$lib/server/price-updater";
 
 export const load: PageServerLoad = async () => {
     await requireRole(Role.ADMIN);
@@ -38,7 +38,7 @@ export const actions: Actions = {
     "update-prices": async () => {
         await requireRole(Role.ADMIN);
 
-        const updated = await updatePrices();
+        const updated = await runPriceUpdate();
         return { action: "update-prices", success: true, updated };
     },
     settings: async ({ request }) => {
