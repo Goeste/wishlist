@@ -1,8 +1,12 @@
 import type { HTMLAttributes } from "svelte/elements";
 
 declare global {
+    // See https://kit.svelte.dev/docs/types#app
+    // for information about these interfaces
+    // and what to do when importing types
     /// <reference types="@sveltejs/kit" />
     declare namespace App {
+        // Locals must be an interface and not a type
         interface Locals {
             user: LocalUser | null;
             isProxyUser: boolean;
@@ -11,8 +15,11 @@ declare global {
         }
     }
 
+    // App version
     declare const __VERSION__: string;
+    // git commit sha
     declare const __COMMIT_SHA__: string;
+    // Date built
     declare const __LASTMOD__: string;
 
     interface IconifyIconHTMLElement extends HTMLAttributes<HTMLElement> {
@@ -38,63 +45,6 @@ declare global {
         intervalHours: number;
         scheduledTime: string | null;
     }
-
-    interface SMTPConfig {
-        enable: boolean;
-        host?: string;
-        port?: number;
-        user?: string;
-        pass?: string;
-        from?: string;
-        fromName?: string;
-    }
-
-    interface OIDCConfig {
-        enable: boolean;
-        discoveryUrl?: string;
-        clientId?: string;
-        clientSecret?: string;
-        providerName?: string;
-        autoRedirect?: boolean;
-        autoRegister?: boolean;
-        enableSync?: boolean;
-        disableEmailVerification?: boolean;
-        ready?: boolean;
-    }
-
-    interface Config {
-        enableSignup?: boolean;
-        suggestions: {
-            enable: boolean;
-            method: string;
-        };
-        smtp: SMTPConfig;
-        claims: {
-            showName: boolean;
-            showNameAcrossGroups: boolean;
-            showForOwner: boolean;
-            requireEmail: boolean;
-        };
-        listMode: string;
-        security: {
-            passwordStrength: number;
-            disablePasswordLogin: boolean;
-        };
-        defaultGroup?: string;
-        enableDefaultListCreation: boolean;
-        allowPublicLists: boolean;
-        oidc: OIDCConfig;
-        priceUpdate: PriceUpdateConfig;
-    }
-
-    type LocalUser = {
-        id: string;
-        username: string;
-        name: string;
-        email: string | null;
-        roleId: string;
-        oauthId: string | null;
-    };
 }
 
 type IconifyIconLoaderCallback = (
