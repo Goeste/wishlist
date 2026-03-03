@@ -31,7 +31,7 @@ export const actions: Actions = {
     "send-test": async () => {
         const user = await requireRole(Role.ADMIN);
 
-        const resp = await sendTest(user.email);
+        const resp = await sendTest(user.email ?? "");
         return { action: "send-test", ...resp };
     },
     settings: async ({ request }) => {
