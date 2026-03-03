@@ -137,7 +137,9 @@
         "wishlist-mode-registry": "Registry",
         "wishlist-mode-registry-tooltip": "One user with one public list. Users from other groups can make suggestions if permitted and anonymous users can claim items.",
         "wishlist-mode-wishlist": "Wishlist",
-        "wishlist-mode-wishlist-tooltip": "Multiple users and multiple lists with claiming and item suggestions. Lists can be made public if permitted by the group."
+        "wishlist-mode-wishlist-tooltip": "Multiple users and multiple lists with claiming and item suggestions. Lists can be made public if permitted by the group.",
+        "price-update-run-now": "Update prices now",
+        "price-update-manual-toast": "{updated} price(s) updated"
     },
     "app": {
         "home": "Home",
