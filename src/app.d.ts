@@ -2,7 +2,6 @@ import type { HTMLAttributes } from "svelte/elements";
 import type { User } from "$lib/generated/prisma/client";
 
 declare global {
-    // See https://kit.svelte.dev/docs/types#app
     /// <reference types="@sveltejs/kit" />
     declare namespace App {
         interface Locals {
