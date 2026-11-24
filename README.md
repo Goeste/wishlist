@@ -19,6 +19,8 @@ Wishlist is a self-hosted wishlist application that you can share with your frie
 - [x] Multiple groups
 - [x] Registry Mode (single list)
 - [x] OAuth Authentication
+- [x] Automatic price updates for items with a product URL
+- [x] Optional [price comparison](#price-updates--price-comparison): RRP for LEGO sets, cheapest offer on idealo.de with shop link and price trend
 
 <p float="left">
     <img src="./assets/homepage-desktop.png" width="74%" />
@@ -164,6 +166,25 @@ You configure this using environment variables.
 
 `HEADER_EMAIL`: The name of the headers that contains the email of the user
 
+### Price Updates & Price Comparison
+
+Both features are configured in the admin settings under **Price Update**.
+
+**Automatic price updates** periodically re-fetch the price of every unclaimed item that has a product URL (interval in hours or a fixed time of day). The button _Update prices now_ runs an update immediately.
+
+**Price comparison (beta)** is disabled by default. When enabled, every unclaimed item is enriched when it is saved and with each price update:
+
+- **RRP**: for LEGO sets the recommended retail price is read from lego.com (via the product URL or a set number in the item name, e.g. `(10316)`)
+- **Cheapest offer**: the cheapest new offer on idealo.de, searched by LEGO set number, EAN or product name, including the shop name and a link to the offer. The price of the item's own shop is taken into account as well.
+- **Price trend**: the percentage difference to the lowest price of the last 30 days (or, without data in that window, the lowest price recorded so far) – green if cheaper, red if more expensive
+- **Images**: items without an image get one from the product page, lego.com or idealo.de. Uploaded images are never replaced.
+- The original product link is kept and shown as _Buy at original shop_.
+
+If a shop blocks automated requests, _Fetch product data_ falls back to idealo.de for the missing name, image and price (only while price comparison is enabled).
+
+> [!NOTE]
+> Prices and images are scraped from third-party websites. Changes to those sites can break the comparison until the parser is updated.
+
 ## Add items using a Bookmarklet
 
 Wishlist supports adding items via a bookmarklet. Whenever you're on a product page that you want to add to Wishlist, you can click on your bookmarklet to open Wishlist in a new tab and instantly start creating a new item.
@@ -183,6 +204,8 @@ window.open(dest, "_blank");
 ```
 
 ## Contributing
+
+The price comparison feature of this fork (RRP, cheapest offer, price trend and the scraping improvements behind it) was developed with the help of [Claude Code](https://claude.com/claude-code), Anthropic's AI coding assistant.
 
 Code contributions are always welcome! If you have something in mind that you would like to work on, please open an issue or comment on an existing issue indicating your interest to make sure someone else isn't already working on it and to discuss any implementation details. Open a PR when you feel that it is ready. You can also open a draft PR as soon as you start work to help track progress.
 
