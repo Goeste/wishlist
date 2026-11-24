@@ -26,7 +26,14 @@ const slugify = (str: string) => {
 const fetchImage = async (imageUrl: string) => {
     try {
         const url = new URL(imageUrl);
-        const resp = await getRequestEvent().fetch(url);
+        // outside of a request (e.g. scheduled price comparison) there is no request event
+        let fetchFn: typeof fetch;
+        try {
+            fetchFn = getRequestEvent().fetch;
+        } catch {
+            fetchFn = fetch;
+        }
+        const resp = await fetchFn(url);
         if (resp.ok && resp.body) {
             return Readable.fromWeb(resp.body as unknown as ReadableStream<any>);
         } else {

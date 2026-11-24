@@ -85,6 +85,7 @@ export const settingSchema = z.object({
     oidcEnableSync: z.coerce.boolean().default(false),
     oidcDisableEmailVerification: z.coerce.boolean().default(false),
     enablePriceUpdate: z.coerce.boolean().default(false),
+    enablePriceCompare: z.coerce.boolean().default(false),
     priceUpdateIntervalHours: z.coerce.number().int().min(1).max(8760).default(24),
     priceUpdateScheduledTime: z
         .string()
@@ -167,7 +168,9 @@ export const getItemUpdateSchema = async () => {
 };
 
 export const extractFormData = (formData: FormData) => {
-    const data = [...formData.entries().filter(([_k, v]) => v.toString())].reduce<Record<string, FormDataEntryValue | FormDataEntryValue[]>>(
+    const data = [...formData.entries().filter(([_k, v]) => v.toString())].reduce<
+        Record<string, FormDataEntryValue | FormDataEntryValue[]>
+    >(
         (data, [key, value]) => ({
             ...data,
             [key]: key in data ? (Array.isArray(data[key]) ? [...data[key], value] : [data[key], value]) : value

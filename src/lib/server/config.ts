@@ -34,7 +34,8 @@ enum ConfigKey {
     OIDC_DISABLE_EMAIL_VERIFICATION = "oidc.disableEmailVerification",
     PRICE_UPDATE_ENABLE = "priceUpdate.enable",
     PRICE_UPDATE_INTERVAL_HOURS = "priceUpdate.intervalHours",
-    PRICE_UPDATE_SCHEDULED_TIME = "priceUpdate.scheduledTime"
+    PRICE_UPDATE_SCHEDULED_TIME = "priceUpdate.scheduledTime",
+    PRICE_COMPARE_ENABLE = "priceCompare.enable"
 }
 
 type Transformer<T> = (val: string | null, shouldMask?: boolean) => T;
@@ -79,7 +80,8 @@ const transformers: Record<ConfigKey, Transformer<unknown>> = {
     "oidc.disableEmailVerification": booleanTransformer,
     "priceUpdate.enable": booleanTransformer,
     "priceUpdate.intervalHours": numberTransformer,
-    "priceUpdate.scheduledTime": stringTransformer
+    "priceUpdate.scheduledTime": stringTransformer,
+    "priceCompare.enable": booleanTransformer
 };
 
 const getDefaultConfig = (): Config => ({
@@ -111,6 +113,9 @@ const getDefaultConfig = (): Config => ({
         enable: false,
         intervalHours: 24,
         scheduledTime: null
+    },
+    priceCompare: {
+        enable: false
     }
 });
 

@@ -103,6 +103,14 @@ type Config = {
     enableDefaultListCreation: boolean;
     allowPublicLists: boolean;
     oidc: OIDCConfig;
+    priceUpdate: {
+        enable: boolean;
+        intervalHours: number;
+        scheduledTime: string | null;
+    };
+    priceCompare: {
+        enable: boolean;
+    };
 };
 
 type Option = {

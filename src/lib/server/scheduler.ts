@@ -1,6 +1,7 @@
 import { logger } from "./logger";
 import { getConfig } from "./config";
 import { runPriceUpdate } from "./price-updater";
+import { runPriceCompare } from "./price-compare";
 
 /**
  * Singleton price-update scheduler.
@@ -43,13 +44,13 @@ class PriceUpdateScheduler {
                     return;
                 }
 
-                logger.info(
-                    `scheduler: next price update in ${Math.round(delayMs / 60_000)} minute(s)`
-                );
+                logger.info(`scheduler: next price update in ${Math.round(delayMs / 60_000)} minute(s)`);
 
                 this.timer = setTimeout(async () => {
                     try {
                         await runPriceUpdate();
+                        // no-op unless the price comparison feature is enabled
+                        await runPriceCompare();
                     } catch (err) {
                         logger.error({ err }, "scheduler: unhandled error during price update");
                     } finally {
@@ -79,10 +80,7 @@ class PriceUpdateScheduler {
             const m = parseInt(mStr, 10);
 
             if (isNaN(h) || isNaN(m)) {
-                logger.warn(
-                    { scheduledTime },
-                    "scheduler: invalid scheduledTime format, expected HH:MM"
-                );
+                logger.warn({ scheduledTime }, "scheduler: invalid scheduledTime format, expected HH:MM");
                 return intervalHours * 60 * 60 * 1_000;
             }
 

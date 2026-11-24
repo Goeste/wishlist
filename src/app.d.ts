@@ -36,6 +36,10 @@ declare global {
         }
     }
 
+    interface PriceCompareConfig {
+        enable: boolean;
+    }
+
     interface PriceUpdateConfig {
         enable: boolean;
         intervalHours: number;
@@ -88,6 +92,7 @@ declare global {
         allowPublicLists: boolean;
         oidc: OIDCConfig;
         priceUpdate: PriceUpdateConfig;
+        priceCompare: PriceCompareConfig;
     }
 }
 

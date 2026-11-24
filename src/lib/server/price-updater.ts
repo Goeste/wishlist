@@ -2,6 +2,7 @@ import { client } from "./prisma";
 import { logger } from "./logger";
 import metascraper from "metascraper";
 import metascraperShopping from "./shopping";
+import { fetchHtml } from "./price-compare/http";
 
 const scraper = metascraper([metascraperShopping()]);
 
@@ -16,16 +17,27 @@ interface FetchedPrice {
  */
 async function fetchPriceForUrl(url: string): Promise<FetchedPrice | null> {
     try {
-        const response = await fetch(url, {
-            headers: {
-                "User-Agent": "Mozilla/5.0 (compatible; Wishlist-PriceBot/1.0)"
-            },
-            signal: AbortSignal.timeout(15_000)
-        });
+        let html: string | null = null;
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    "User-Agent": "Mozilla/5.0 (compatible; Wishlist-PriceBot/1.0)"
+                },
+                signal: AbortSignal.timeout(15_000)
+            });
+            if (response.ok) html = await response.text();
+        } catch {
+            // handled by the fallback below
+        }
 
-        if (!response.ok) return null;
+        // Many shops (e.g. lego.com) block simple bot requests with 403 –
+        // retry with browser-like headers, like the product fetch in /api/product does.
+        if (html === null) {
+            const resp = await fetchHtml(url, 15_000);
+            if (!resp) return null;
+            html = resp.body;
+        }
 
-        const html = await response.text();
         const metadata = await scraper({ html, url });
 
         if (!metadata.price || !metadata.currency) return null;

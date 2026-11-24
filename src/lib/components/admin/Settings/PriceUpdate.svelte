@@ -72,4 +72,24 @@
             {/snippet}
         </Setting>
     </SettingsGroup>
+
+    <SettingsGroup title={$t("admin.price-compare")}>
+        <Setting>
+            <label class="checkbox-label">
+                <input
+                    id="enablePriceCompare"
+                    name="enablePriceCompare"
+                    class="checkbox"
+                    type="checkbox"
+                    checked={config.priceCompare.enable}
+                    onchange={(e) => (config.priceCompare.enable = e.currentTarget.checked)}
+                />
+                <span>{$t("admin.price-compare-enable")}</span>
+            </label>
+
+            {#snippet description()}
+                {$t("admin.price-compare-enable-tooltip")}
+            {/snippet}
+        </Setting>
+    </SettingsGroup>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
     import Markdown from "$lib/components/Markdown.svelte";
     import { getFormatter } from "$lib/i18n";
-    import { formatPrice } from "$lib/price-formatter";
+    import { formatPrice, formatNumberAsPrice } from "$lib/price-formatter";
     import { shouldShowName, getClaimedName } from "../../util";
     import type { ItemCardProps } from "../ItemCard.svelte";
 
@@ -27,6 +27,14 @@
     }: Props = $props();
 
     let expandClaims = $state(false);
+
+    const hostnameOf = (url: string) => {
+        try {
+            return new URL(url).hostname.replace(/^www\./, "");
+        } catch {
+            return url;
+        }
+    };
 </script>
 
 <!-- Price with fallback -->
@@ -36,6 +44,80 @@
         <span data-testid="price">
             {formatPrice(item)}
         </span>
+    </div>
+{/if}
+
+<!-- UVP (price comparison feature) -->
+{#if item.rrpValue && item.rrpCurrency}
+    <div class="flex items-center gap-x-2">
+        <iconify-icon icon="ion:pricetags-outline"></iconify-icon>
+        <span data-testid="rrp">
+            {$t("wishes.rrp", { values: { price: formatNumberAsPrice(item.rrpCurrency, item.rrpValue) } })}
+        </span>
+    </div>
+{/if}
+
+<!-- Cheapest offer (price comparison feature) -->
+{#if item.bestPriceValue && item.bestPriceCurrency && item.bestPriceUrl}
+    <div class="flex items-center gap-x-2">
+        <iconify-icon icon="ion:trending-down"></iconify-icon>
+        <a
+            class="anchor"
+            data-testid="best-price"
+            href={item.bestPriceUrl}
+            onclick={(e) => e.stopPropagation()}
+            rel="noopener noreferrer nofollow"
+            target="_blank"
+        >
+            {$t("wishes.best-price", {
+                values: {
+                    price: formatNumberAsPrice(item.bestPriceCurrency, item.bestPriceValue),
+                    shop: item.bestPriceShop ?? "Shop"
+                }
+            })}
+        </a>
+    </div>
+    {#if item.bestPriceRefValue}
+        {@const diff = ((item.bestPriceValue - item.bestPriceRefValue) / item.bestPriceRefValue) * 100}
+        {@const rounded = Math.round(diff * 10) / 10}
+        <div class="flex items-center gap-x-2 text-sm" data-testid="best-price-trend">
+            <iconify-icon
+                class={rounded < 0 ? "text-success-700-300" : rounded > 0 ? "text-error-700-300" : "text-subtle"}
+                icon={rounded < 0 ? "ion:arrow-down" : rounded > 0 ? "ion:arrow-up" : "ion:remove"}
+            ></iconify-icon>
+            <span
+                class={[
+                    "font-bold",
+                    rounded < 0 && "text-success-700-300",
+                    rounded > 0 && "text-error-700-300",
+                    rounded === 0 && "text-subtle"
+                ]}
+            >
+                {$t(item.bestPriceRefWindow === "30d" ? "wishes.best-price-trend" : "wishes.best-price-trend-all", {
+                    values: {
+                        percent: `${rounded > 0 ? "+" : ""}${rounded.toLocaleString(undefined, { maximumFractionDigits: 1 })} %`,
+                        price: formatNumberAsPrice(item.bestPriceCurrency, item.bestPriceRefValue)
+                    }
+                })}
+            </span>
+        </div>
+    {/if}
+{/if}
+
+<!-- Original shop link stays available next to the cheapest offer -->
+{#if item.url && item.bestPriceUrl && item.bestPriceUrl !== item.url}
+    <div class="flex items-center gap-x-2">
+        <iconify-icon icon="ion:storefront-outline"></iconify-icon>
+        <a
+            class="anchor"
+            data-testid="original-shop"
+            href={item.url}
+            onclick={(e) => e.stopPropagation()}
+            rel="noopener noreferrer"
+            target="_blank"
+        >
+            {$t("wishes.original-shop", { values: { shop: hostnameOf(item.url) } })}
+        </a>
     </div>
 {/if}
 

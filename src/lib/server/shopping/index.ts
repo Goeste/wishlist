@@ -23,9 +23,22 @@ type ShoppingRuleSet = {
     [C in keyof ShoppingMetadata]?: Array<Check>;
 } & RuleSet;
 
+// Pages often contain several JSON-LD blocks (lego.com: Organization, WebPage, Product, ...).
+// Prefer the Product block instead of blindly using the first one.
 const jsonLd = memoizeOne(($: CheckOptions["htmlDom"]) => {
-    const jsonld = JSON.parse($('script[type="application/ld+json"]').html());
-    return jsonld;
+    const blocks = [];
+    $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+            const parsed = JSON.parse($(el).html());
+            for (const entry of Array.isArray(parsed) ? parsed : [parsed]) {
+                if (entry) blocks.push(entry);
+            }
+        } catch {
+            // ignore malformed blocks
+        }
+    });
+    const isProduct = (b) => b["@type"] === "Product" || (Array.isArray(b["@type"]) && b["@type"].includes("Product"));
+    return blocks.find(isProduct) ?? blocks[0] ?? null;
 });
 
 const jsonLdGraph = memoizeOne(($: CheckOptions["htmlDom"]) => {
@@ -105,6 +118,7 @@ export default () => {
             ({ url }) => url // We'll trust the url the user provides as it may have additional product metadata
         ],
         image: [
+            ({ htmlDom: $ }) => $("div#imgTagWrapperId img").attr("data-old-hires") || undefined, //amazon, high-res
             ({ htmlDom: $ }) => $("div#imgTagWrapperId img").attr("src"), //amazon.com
             ({ htmlDom: $ }) => $('[property="og:image:secure_url"]').attr("content"),
             ({ htmlDom: $, url }) => {

@@ -126,6 +126,22 @@ model Item {
     imageUrl    String?
     quantity    Int?
     mostWanted  Boolean     @default(false)
+
+    // price comparison (optional feature, see src/lib/server/price-compare)
+    rrpValue           Int?
+    rrpCurrency        String?
+    bestPriceValue     Int?
+    bestPriceCurrency  String?
+    bestPriceShop      String?
+    bestPriceUrl       String?
+    bestPriceCheckedAt DateTime?
+    /// reference for the price trend: lowest best price of the 30 days before the
+    /// current check, or – without data in that window – the lowest price ever seen
+    bestPriceRefValue   Int?
+    /// "30d" or "all", depending on which reference was used
+    bestPriceRefWindow  String?
+    bestPriceHistory    ItemBestPriceHistory[]
+
     user        User        @relation(name: "MyItems", fields: [userId], references: [id], onDelete: Cascade)
     userId      String
     createdBy   User        @relation(name: "CreatedItems", fields: [createdById], references: [id], onDelete: Cascade)
@@ -217,4 +233,17 @@ model Patch {
     executed_at DateTime @default(now())
 
     @@map("patch")
+}
+
+model ItemBestPriceHistory {
+    id        String   @id @default(uuid())
+    item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+    itemId    Int
+    value     Int
+    currency  String
+    shop      String?
+    checkedAt DateTime @default(now())
+
+    @@index([itemId, checkedAt])
+    @@map("item_best_price_history")
 }

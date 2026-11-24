@@ -57,7 +57,11 @@
                 updatingPrices = false;
                 if (result.type === "success") {
                     const updated = (result.data as any)?.updated ?? 0;
-                    toaster.info({ description: $t("admin.price-update-manual-toast", { updated }) });
+                    const compared = (result.data as any)?.compared ?? 0;
+                    toaster.info({ description: $t("admin.price-update-manual-toast", { values: { updated } }) });
+                    if (compared > 0) {
+                        toaster.info({ description: $t("admin.price-compare-manual-toast", { values: { compared } }) });
+                    }
                 } else {
                     toaster.error({ description: $t("errors.something-went-wrong") });
                 }

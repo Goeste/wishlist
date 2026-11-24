@@ -10,6 +10,7 @@ import { getFormatter, getLocale } from "$lib/server/i18n";
 import { getAvailableLists, getById, getNextDisplayOrderForLists } from "$lib/server/list";
 import { ItemEvent } from "$lib/events";
 import { getItemInclusions } from "$lib/server/items";
+import { enrichItemInBackground } from "$lib/server/price-compare";
 import { requireLogin } from "$lib/server/auth";
 import { extractFormData, getItemCreateSchema } from "$lib/server/validations";
 import z from "zod";
@@ -150,6 +151,7 @@ export const actions: Actions = {
         });
 
         itemEmitter.emit(ItemEvent.ITEM_CREATE, item);
+        enrichItemInBackground(item.id);
 
         const redirectTo = requestUrl.searchParams.get("redirectTo");
         redirect(302, redirectTo || "/");

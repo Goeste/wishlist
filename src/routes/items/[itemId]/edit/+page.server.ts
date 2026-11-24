@@ -9,6 +9,7 @@ import { getMinorUnits } from "$lib/price-formatter";
 import { getFormatter, getLocale } from "$lib/server/i18n";
 import { ItemEvent } from "$lib/events";
 import { getItemInclusions } from "$lib/server/items";
+import { enrichItemInBackground } from "$lib/server/price-compare";
 import { getAvailableLists, getNextDisplayOrderForLists } from "$lib/server/list";
 import { requireLogin } from "$lib/server/auth";
 import { extractFormData, getItemUpdateSchema } from "$lib/server/validations";
@@ -236,6 +237,7 @@ export const actions: Actions = {
         }
 
         itemEmitter.emit(ItemEvent.ITEM_UPDATE, updatedItem);
+        enrichItemInBackground(updatedItem.id);
 
         // if the image is not undefined, then it either was just created or it's null, which indicates the user removed it
         if (newImageFile !== undefined && item.imageUrl) {

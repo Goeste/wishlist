@@ -9,6 +9,7 @@ import { z } from "zod";
 import { requireRole } from "$lib/server/auth";
 import { priceUpdateScheduler } from "$lib/server/scheduler";
 import { runPriceUpdate } from "$lib/server/price-updater";
+import { runPriceCompare } from "$lib/server/price-compare";
 
 export const load: PageServerLoad = async () => {
     await requireRole(Role.ADMIN);
@@ -39,7 +40,8 @@ export const actions: Actions = {
         await requireRole(Role.ADMIN);
 
         const updated = await runPriceUpdate();
-        return { action: "update-prices", success: true, updated };
+        const compared = await runPriceCompare();
+        return { action: "update-prices", success: true, updated, compared };
     },
     settings: async ({ request }) => {
         await requireRole(Role.ADMIN);
@@ -133,6 +135,9 @@ const generateConfig = (configData: z.infer<typeof settingSchema>): Config => {
         enableDefaultListCreation: configData.enableDefaultListCreation,
         allowPublicLists: configData.allowPublicLists,
         oidc: oidcConfig,
-        priceUpdate: priceUpdateConfig
+        priceUpdate: priceUpdateConfig,
+        priceCompare: {
+            enable: configData.enablePriceCompare
+        }
     };
 };
