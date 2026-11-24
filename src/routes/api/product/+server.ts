@@ -12,7 +12,8 @@ import { requireLoginOrError } from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
 import { isPriceCompareEnabled } from "$lib/server/price-compare";
 import { findCheapestOnIdealo } from "$lib/server/price-compare/idealo";
-import { isBlockedTitle, nameFromUrl, queryFromUrl } from "$lib/server/price-compare/blocked";
+import { isBlockedTitle, isChallengePage, nameFromUrl, queryFromUrl } from "$lib/server/price-compare/blocked";
+import { fetchWithBrowser } from "$lib/server/price-compare/browser";
 import { logger } from "$lib/server/logger";
 
 const scraper = metascraper([shopping(), metascraperTitle(), metascraperImage()]);
@@ -50,6 +51,20 @@ const goShopping = async (targetUrl: URL, locales: string[]) => {
             }
         });
     }
+
+    // still blocked by a JavaScript challenge ("Verify your browser", Shopify, Cloudflare):
+    // load the page in headless Chromium
+    const challenged = [403, 503].includes(resp.statusCode) || isChallengePage(resp.body);
+    if (challenged) {
+        const page = await fetchWithBrowser(targetUrl.toString());
+        if (page) return scraper({ html: page.body, url: page.url });
+    }
+
+    if (resp.statusCode >= 400) {
+        // error / rate-limit pages ("Too many requests") must not become item data
+        throw new Error(`shop answered with status ${resp.statusCode}`);
+    }
+
     const metadata = await scraper({ html: resp.body, url: resp.url });
     return metadata;
 };

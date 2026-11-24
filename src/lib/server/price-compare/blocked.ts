@@ -19,6 +19,8 @@ const BLOCKED_TITLE = new RegExp(
         "captcha",
         "ddos[- ]guard",
         "request unsuccessful",
+        "too many requests",
+        "oops, something went wrong",
         "one moment, please",
         "please wait",
         "nicht gefunden",

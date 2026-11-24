@@ -53,9 +53,12 @@ ENV BODY_SIZE_LIMIT=5000000
 
 WORKDIR /usr/src/app
 
+# chromium: headless browser fallback for shops with JavaScript bot protection
+# (see src/lib/server/price-compare/browser.ts, disable with BROWSER_FALLBACK=false)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl \
+    && apt-get install -y --no-install-recommends openssl chromium fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
+ENV CHROMIUM_PATH=/usr/bin/chromium
 
 COPY --from=caddy /caddy /usr/bin/caddy
 COPY ["package.json", "pnpm-lock.yaml", "entrypoint.sh", "prisma.config.ts", "Caddyfile", "./"]

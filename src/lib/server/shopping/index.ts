@@ -24,7 +24,8 @@ type ShoppingRuleSet = {
 } & RuleSet;
 
 // Pages often contain several JSON-LD blocks (lego.com: Organization, WebPage, Product, ...).
-// Prefer the Product block instead of blindly using the first one.
+// Only Product blocks are used – an Organization/WebSite block would turn the shop's
+// name ("The LEGO Group", "Volcom Europe") into the item name.
 const jsonLd = memoizeOne(($: CheckOptions["htmlDom"]) => {
     const blocks = [];
     $('script[type="application/ld+json"]').each((_, el) => {
@@ -37,8 +38,9 @@ const jsonLd = memoizeOne(($: CheckOptions["htmlDom"]) => {
             // ignore malformed blocks
         }
     });
-    const isProduct = (b) => b["@type"] === "Product" || (Array.isArray(b["@type"]) && b["@type"].includes("Product"));
-    return blocks.find(isProduct) ?? blocks[0] ?? null;
+    const PRODUCT_TYPES = ["Product", "ProductGroup", "IndividualProduct"];
+    const isProduct = (b) => [b["@type"]].flat().some((t) => PRODUCT_TYPES.includes(t));
+    return blocks.find(isProduct) ?? null;
 });
 
 const jsonLdGraph = memoizeOne(($: CheckOptions["htmlDom"]) => {
@@ -218,7 +220,21 @@ export default () => {
             ({ htmlDom: $ }) => toPriceFormat($("[data-asin-price]").attr("data-asin-price")), //amazon
             ({ htmlDom: $ }) => toPriceFormat($("[itemprop=price]").html()),
             ({ htmlDom: $ }) => toPriceFormat($("#attach-base-product-price").attr("value")),
-            ({ htmlDom: $ }) => toPriceFormat($("span.a-offscreen", "span.a-price").html()),
+            // amazon: only the main buy box – the first "a-price" on the page often belongs to
+            // another offer, an accessory or a sponsored product
+            ({ htmlDom: $ }) =>
+                toPriceFormat(
+                    $(
+                        [
+                            "#corePriceDisplay_desktop_feature_div .a-price .a-offscreen",
+                            "#corePrice_feature_div .a-price .a-offscreen",
+                            "#corePrice_desktop .a-price .a-offscreen",
+                            "#apex_desktop .a-price .a-offscreen"
+                        ].join(", ")
+                    )
+                        .first()
+                        .text()
+                ),
             ({ htmlDom: $ }) => toPriceFormat($("span.price-amount").html())
         ],
         asin: [

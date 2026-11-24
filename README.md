@@ -79,6 +79,10 @@ You can now connect to your application at `http://<host>:3280`.
 
 `MAX_IMAGE_SIZE`: Maxinum image size that can be uploaded (in bytes). Defaults to 5000000 (5MB)
 
+`BROWSER_FALLBACK`: Set to `false` to disable the headless browser that loads shop pages protected by JavaScript bot checks (see [Price Updates & Price Comparison](#price-updates--price-comparison)). Enabled by default in the Docker image
+
+`CHROMIUM_PATH`: Path to the Chromium executable used for the browser fallback. Defaults to `/usr/bin/chromium` in the Docker image
+
 ### Running behind a reverse proxy
 
 It is recommended to run Wishlist behind a reverse proxy. Currently, Wishlist does not support running on a different subpath (i.e. `https://domain.com/wishlist`).
@@ -181,7 +185,9 @@ Both features are configured in the admin settings under **Price Update**.
 - The original product link is kept and shown as _Buy at original shop_.
 - **Names from bot-protection pages** ("Just a moment...", "Verify your browser", "Amazon.de") are detected and replaced with the real product name.
 
-If a shop blocks automated requests, _Fetch product data_ falls back to idealo.de for the missing name, image and price (only while price comparison is enabled).
+Many shops protect their pages with JavaScript bot checks ("Verify your browser", "Just a moment...", Shopify challenges). When a normal request is blocked, the page is loaded in a headless Chromium that is bundled with the Docker image. It only runs for blocked pages, handles one page at a time and is closed after a minute of inactivity (roughly 500 MB RAM while active). This applies to _Fetch product data_, automatic price updates and the price comparison. Real CAPTCHAs and hard blocks cannot be solved.
+
+If a shop still blocks, _Fetch product data_ falls back to idealo.de for the missing name, image and price (only while price comparison is enabled).
 
 > [!NOTE]
 > Prices and images are scraped from third-party websites. Changes to those sites can break the comparison until the parser is updated.

@@ -2,6 +2,7 @@ import { gotScraping } from "got-scraping";
 import { env } from "$env/dynamic/private";
 import { logger } from "$lib/server/logger";
 import { isChallengePage } from "./blocked";
+import { fetchWithBrowser, isBrowserFallbackAvailable } from "./browser";
 
 export interface HtmlResponse {
     status: number;
@@ -22,6 +23,8 @@ const determineProxy = (url: URL) => {
  * Plain `fetch` gets blocked with 403 by lego.com and idealo.de.
  * Bot protection (e.g. lego.com) sporadically answers 403 depending on the randomly
  * generated header fingerprint, so blocked requests are retried with a fresh one.
+ * If the page stays blocked by a JavaScript challenge (403/503 or a challenge page),
+ * it is loaded in headless Chromium as a last resort (see ./browser.ts).
  * Returns null on network errors or non-2xx responses.
  */
 export const fetchHtml = async (rawUrl: string, timeoutMs = 20_000, attempts = 3): Promise<HtmlResponse | null> => {
@@ -32,7 +35,11 @@ export const fetchHtml = async (rawUrl: string, timeoutMs = 20_000, attempts = 3
         return null;
     }
 
-    for (let attempt = 1; attempt <= attempts; attempt++) {
+    // with a browser available, one retry is enough before switching to it
+    const maxAttempts = isBrowserFallbackAvailable() ? Math.min(attempts, 2) : attempts;
+    let challenged = false;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
             const resp = await gotScraping({
                 url,
@@ -51,17 +58,21 @@ export const fetchHtml = async (rawUrl: string, timeoutMs = 20_000, attempts = 3
             }
 
             const retryable = challenge || [403, 429, 503].includes(resp.statusCode);
+            // 429 = rate limit: a browser would only make it worse
+            challenged = challenge || [403, 503].includes(resp.statusCode);
             logger.warn(
                 { url: rawUrl, status: resp.statusCode, challenge, attempt },
-                "price-compare: unexpected status" + (retryable && attempt < attempts ? ", retrying" : "")
+                "price-compare: unexpected status" + (retryable && attempt < maxAttempts ? ", retrying" : "")
             );
             if (!retryable) return null;
         } catch (err) {
+            challenged = false;
             logger.warn({ url: rawUrl, err, attempt }, "price-compare: request failed");
         }
-        if (attempt < attempts) await sleep(1_000 * attempt);
+        if (attempt < maxAttempts) await sleep(1_000 * attempt);
     }
-    return null;
+
+    return challenged ? fetchWithBrowser(rawUrl) : null;
 };
 
 /** Minimal HTML entity decoding for attribute values. */

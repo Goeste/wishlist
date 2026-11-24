@@ -83,6 +83,7 @@
         "nodemailer": "^7.0.5",
         "openid-client": "^6.6.4",
         "pino": "^10.0.0",
+        "playwright-core": "^1.58.2",
         "prisma": "^7.1.0",
         "sharp": "^0.34.3",
         "svelte-i18n": "^4.0.1",
