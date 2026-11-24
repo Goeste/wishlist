@@ -80,6 +80,11 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
             shopInfo = await fetchShopInfo(item.url);
             imageCandidate ??= shopInfo?.imageUrl ?? null;
             betterName ??= shopInfo?.name ?? null;
+            // RRP stated by the shop (Amazon "UVP"), unless a LEGO RRP was found
+            if (shopInfo?.rrp && data.rrpValue == null) {
+                data.rrpValue = shopInfo.rrp.value;
+                data.rrpCurrency = shopInfo.rrp.currency;
+            }
         }
 
         // 3) idealo.de: cheapest offer + shop link (search by set number, EAN or name)

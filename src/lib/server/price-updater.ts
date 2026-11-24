@@ -3,6 +3,7 @@ import { logger } from "./logger";
 import metascraper from "metascraper";
 import metascraperShopping from "./shopping";
 import { fetchHtml } from "./price-compare/http";
+import { fetchAmazonOffer, isAmazonUrl } from "./price-compare/amazon";
 
 const scraper = metascraper([metascraperShopping()]);
 
@@ -16,6 +17,12 @@ interface FetchedPrice {
  * Returns null if price or currency could not be determined.
  */
 async function fetchPriceForUrl(url: string): Promise<FetchedPrice | null> {
+    // amazon: current price (incl. deals) from the offers panel, the product page often has no buy box
+    if (isAmazonUrl(url)) {
+        const offer = await fetchAmazonOffer(url);
+        if (offer?.price) return offer.price;
+    }
+
     try {
         let html: string | null = null;
         try {

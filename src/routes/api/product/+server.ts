@@ -14,6 +14,7 @@ import { isPriceCompareEnabled } from "$lib/server/price-compare";
 import { findCheapestOnIdealo } from "$lib/server/price-compare/idealo";
 import { isBlockedTitle, isChallengePage, nameFromUrl, queryFromUrl } from "$lib/server/price-compare/blocked";
 import { fetchWithBrowser } from "$lib/server/price-compare/browser";
+import { fetchAmazonOffer, isAmazonUrl } from "$lib/server/price-compare/amazon";
 import { logger } from "$lib/server/logger";
 
 const scraper = metascraper([shopping(), metascraperTitle(), metascraperImage()]);
@@ -159,6 +160,19 @@ export const GET: RequestHandler = async ({ request, url }) => {
             // drop the challenge/error page data ("Just a moment...", "Robot Check"), keep only the url
             metadata = { url: targetUrl.toString() } as Metadata;
             blocked = true;
+        }
+
+        if (isAmazonUrl(targetUrl.toString())) {
+            // amazon: current price from the offers panel (the page often has no buy box for servers)
+            const offer = await fetchAmazonOffer(targetUrl.toString());
+            if (offer) {
+                metadata = {
+                    ...metadata,
+                    ...(offer.price ? { price: offer.price.value / 100, currency: offer.price.currency } : {}),
+                    ...(!hasUsableName(metadata) && offer.title ? { name: offer.title, title: offer.title } : {}),
+                    image: metadata.image || offer.imageUrl || undefined
+                } as unknown as Metadata;
+            }
         }
 
         metadata = (await fillFromIdealo(metadata, targetUrl)) as Metadata;

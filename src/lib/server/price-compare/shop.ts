@@ -4,6 +4,7 @@ import metascraperImage from "metascraper-image";
 import shopping from "$lib/server/shopping";
 import { fetchHtml, extractJsonLd } from "./http";
 import { isBlockedTitle } from "./blocked";
+import { fetchAmazonOffer, isAmazonUrl } from "./amazon";
 
 const scraper = metascraper([shopping(), metascraperTitle(), metascraperImage()]);
 
@@ -14,6 +15,8 @@ export interface ShopInfo {
     gtin: string | null;
     /** price in minor units (cents) */
     price: { value: number; currency: string } | null;
+    /** RRP shown by the shop (currently Amazon), in minor units */
+    rrp: { value: number; currency: string } | null;
 }
 
 const GTIN_KEYS = ["gtin13", "gtin", "gtin14", "gtin12", "gtin8", "ean"];
@@ -53,6 +56,23 @@ const toAbsoluteUrl = (value: string | null | undefined, base: string) => {
  * browser-like headers and retries.
  */
 export const fetchShopInfo = async (url: string): Promise<ShopInfo | null> => {
+    const info = await fetchShopPage(url);
+    if (!isAmazonUrl(url)) return info;
+
+    // amazon: the product page often lacks the buy box – take price and RRP from the offers panel
+    const offer = await fetchAmazonOffer(url);
+    if (!offer) return info;
+    return {
+        url: info?.url ?? url,
+        name: info?.name ?? offer.title,
+        imageUrl: info?.imageUrl ?? offer.imageUrl,
+        gtin: info?.gtin ?? null,
+        price: offer.price ?? info?.price ?? null,
+        rrp: offer.rrp
+    };
+};
+
+const fetchShopPage = async (url: string): Promise<ShopInfo | null> => {
     const resp = await fetchHtml(url);
     if (!resp) return null;
 
@@ -71,6 +91,7 @@ export const fetchShopInfo = async (url: string): Promise<ShopInfo | null> => {
         name: isBlockedTitle(name) ? null : name,
         imageUrl: toAbsoluteUrl(md.image, resp.url),
         gtin: extractGtin(resp.body),
-        price
+        price,
+        rrp: null
     };
 };

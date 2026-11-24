@@ -27,7 +27,12 @@ const determineProxy = (url: URL) => {
  * it is loaded in headless Chromium as a last resort (see ./browser.ts).
  * Returns null on network errors or non-2xx responses.
  */
-export const fetchHtml = async (rawUrl: string, timeoutMs = 20_000, attempts = 3): Promise<HtmlResponse | null> => {
+export const fetchHtml = async (
+    rawUrl: string,
+    timeoutMs = 20_000,
+    attempts = 3,
+    headers?: Record<string, string>
+): Promise<HtmlResponse | null> => {
     let url: URL;
     try {
         url = new URL(rawUrl);
@@ -48,6 +53,7 @@ export const fetchHtml = async (rawUrl: string, timeoutMs = 20_000, attempts = 3
                     devices: ["desktop"],
                     locales: ["de-DE"]
                 },
+                headers,
                 timeout: { request: timeoutMs },
                 throwHttpErrors: false
             });
