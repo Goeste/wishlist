@@ -1,6 +1,7 @@
 import { gotScraping } from "got-scraping";
 import { env } from "$env/dynamic/private";
 import { logger } from "$lib/server/logger";
+import { isChallengePage } from "./blocked";
 
 export interface HtmlResponse {
     status: number;
@@ -44,13 +45,14 @@ export const fetchHtml = async (rawUrl: string, timeoutMs = 20_000, attempts = 3
                 throwHttpErrors: false
             });
 
-            if (resp.statusCode >= 200 && resp.statusCode < 300) {
+            const challenge = resp.statusCode < 300 && isChallengePage(resp.body);
+            if (resp.statusCode >= 200 && resp.statusCode < 300 && !challenge) {
                 return { status: resp.statusCode, url: resp.url, body: resp.body };
             }
 
-            const retryable = [403, 429, 503].includes(resp.statusCode);
+            const retryable = challenge || [403, 429, 503].includes(resp.statusCode);
             logger.warn(
-                { url: rawUrl, status: resp.statusCode, attempt },
+                { url: rawUrl, status: resp.statusCode, challenge, attempt },
                 "price-compare: unexpected status" + (retryable && attempt < attempts ? ", retrying" : "")
             );
             if (!retryable) return null;

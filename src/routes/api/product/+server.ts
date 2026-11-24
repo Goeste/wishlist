@@ -12,6 +12,7 @@ import { requireLoginOrError } from "$lib/server/auth";
 import { env } from "$env/dynamic/private";
 import { isPriceCompareEnabled } from "$lib/server/price-compare";
 import { findCheapestOnIdealo } from "$lib/server/price-compare/idealo";
+import { isBlockedTitle, nameFromUrl, queryFromUrl } from "$lib/server/price-compare/blocked";
 import { logger } from "$lib/server/logger";
 
 const scraper = metascraper([shopping(), metascraperTitle(), metascraperImage()]);
@@ -57,34 +58,16 @@ const isCaptchaResponse = (metadata: Metadata) => {
     return metadata.image && metadata.image.toLocaleLowerCase().indexOf("captcha") >= 0;
 };
 
-/** Titles of bot-protection / error pages that must not end up as item names */
-const BLOCKED_TITLE =
-    /just a moment|robot check|captcha|access denied|attention required|nicht gefunden|not found|^amazon\.[a-z.]+$/i;
-
 const getName = (metadata: Metadata) => (metadata as Metadata & { name?: string }).name || metadata.title;
 
 const hasUsableName = (metadata: Metadata) => {
     const name = getName(metadata);
-    return !!name && !BLOCKED_TITLE.test(name.trim());
+    return !!name && !isBlockedTitle(name);
 };
 
 const isBlockedPage = (metadata: Metadata) => {
     const name = getName(metadata);
-    return isCaptchaResponse(metadata) || (!!name && BLOCKED_TITLE.test(name.trim()));
-};
-
-/** "https://www.amazon.de/Sony-WH-1000XM5-Kopfhörer/dp/B09XS7JWHH" -> "Sony WH 1000XM5 Kopfhörer" */
-const queryFromUrl = (url: URL) => {
-    const segments = decodeURIComponent(url.pathname)
-        .split("/")
-        .filter((s) => /[a-zA-ZäöüÄÖÜ]{3,}/.test(s) && s.includes("-"))
-        .sort((a, b) => b.length - a.length);
-    return (
-        segments[0]
-            ?.replace(/\.html?$/, "")
-            .replace(/[-_]+/g, " ")
-            .trim() ?? null
-    );
+    return isCaptchaResponse(metadata) || isBlockedTitle(name);
 };
 
 /**
@@ -164,8 +147,14 @@ export const GET: RequestHandler = async ({ request, url }) => {
         }
 
         metadata = (await fillFromIdealo(metadata, targetUrl)) as Metadata;
-        if (blocked && !hasUsableName(metadata) && !metadata.image) {
-            error(424, $t("errors.product-information-not-available"));
+        if (blocked && !hasUsableName(metadata)) {
+            // last resort: a readable name from the URL instead of "Verify your browser"
+            const fallbackName = nameFromUrl(targetUrl);
+            if (fallbackName) {
+                metadata = { ...metadata, name: fallbackName, title: fallbackName } as Metadata;
+            } else if (!metadata.image) {
+                error(424, $t("errors.product-information-not-available"));
+            }
         }
 
         if (metadata.url == metadata.image) {

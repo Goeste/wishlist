@@ -174,11 +174,12 @@ Both features are configured in the admin settings under **Price Update**.
 
 **Price comparison (beta)** is disabled by default. When enabled, every unclaimed item is enriched when it is saved and with each price update:
 
-- **RRP**: for LEGO sets the recommended retail price is read from lego.com (via the product URL or a set number in the item name, e.g. `(10316)`)
+- **RRP**: for LEGO sets the recommended retail price is read from lego.com, with brickmerge.de as fallback (via the product URL or a set number in a name containing "LEGO", e.g. `LEGO Bruchtal (10316)`)
 - **Cheapest offer**: the cheapest new offer on idealo.de, searched by LEGO set number, EAN or product name, including the shop name and a link to the offer. The price of the item's own shop is taken into account as well.
 - **Price trend**: the percentage difference to the lowest price of the last 30 days (or, without data in that window, the lowest price recorded so far) – green if cheaper, red if more expensive
 - **Images**: items without an image get one from the product page, lego.com or idealo.de. Uploaded images are never replaced.
 - The original product link is kept and shown as _Buy at original shop_.
+- **Names from bot-protection pages** ("Just a moment...", "Verify your browser", "Amazon.de") are detected and replaced with the real product name.
 
 If a shop blocks automated requests, _Fetch product data_ falls back to idealo.de for the missing name, image and price (only while price comparison is enabled).
 

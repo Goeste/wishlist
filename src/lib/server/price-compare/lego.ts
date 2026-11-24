@@ -34,13 +34,12 @@ export const extractSetNumber = (url: string | null | undefined, name: string | 
             // ignore
         }
     }
-    if (name) {
+    // only for LEGO products – other names may contain unrelated numbers like "Pullover (12345)"
+    if (name && (/lego/i.test(name) || isLegoUrl(url))) {
         const inParens = name.match(/\((\d{4,6})\)/);
         if (inParens) return inParens[1];
-        if (/lego/i.test(name) || isLegoUrl(url)) {
-            const m = name.match(/(?:^|\D)(\d{4,6})(?:\D|$)/);
-            if (m) return m[1];
-        }
+        const m = name.match(/(?:^|\D)(\d{4,6})(?:\D|$)/);
+        if (m) return m[1];
     }
     return null;
 };
@@ -110,5 +109,72 @@ export const fetchLegoInfo = async (opts: {
         imageUrl,
         url: resp.url,
         rrp: rrpCents !== null ? { value: rrpCents, currency } : null
+    };
+};
+
+const decodeHtml = (s: string) =>
+    s
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&reg;/g, "®")
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#0*39;|&apos;/g, "'")
+        .replace(/&nbsp;/g, " ")
+        .replace(/&([a-z])uml;/gi, (_, c: string) => ({ a: "ä", o: "ö", u: "ü", A: "Ä", O: "Ö", U: "Ü" })[c] ?? c)
+        .replace(/&szlig;/g, "ß")
+        .replace(/\s+/g, " ")
+        .trim();
+
+/**
+ * Fallback for LEGO sets when lego.com blocks the request (common from datacenter IPs):
+ * brickmerge.de lists the German RRP ("UVP"), name and image of every set.
+ */
+export const fetchBrickmergeInfo = async (setNumber: string): Promise<LegoInfo | null> => {
+    const url = `https://www.brickmerge.de/${setNumber}-1`;
+    const resp = await fetchHtml(url);
+    if (!resp) return null;
+
+    // the first RRP on the page belongs to the set itself, later ones to related sets
+    const uvp = resp.body.match(/title="unverbindliche Preisempfehlung">\s*UVP\s*([\d.,]+)/);
+    const rrp = uvp ? parsePrice(uvp[1]) : null;
+
+    const h1 = resp.body.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+    const name = h1 ? decodeHtml(h1[1]).replace(/^LEGO\s*®\s*/, "LEGO® ") : null;
+
+    const ogImage =
+        resp.body.match(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/) ??
+        resp.body.match(/<meta[^>]+content="([^"]+)"[^>]+property="og:image"/);
+
+    // make sure the page really is about this set
+    if (name && !name.includes(setNumber)) return null;
+
+    return {
+        setNumber,
+        name,
+        imageUrl: ogImage ? ogImage[1] : null,
+        url: resp.url,
+        rrp: rrp !== null ? { value: Math.round(rrp * 100), currency: "EUR" } : null
+    };
+};
+
+/** lego.com first, brickmerge.de as fallback (and for a missing RRP). */
+export const fetchLegoSetInfo = async (opts: {
+    url?: string | null;
+    setNumber?: string | null;
+}): Promise<LegoInfo | null> => {
+    const lego = await fetchLegoInfo(opts);
+    if (lego?.rrp) return lego;
+
+    const setNumber = lego?.setNumber ?? opts.setNumber ?? extractSetNumber(opts.url, null);
+    if (!setNumber) return lego;
+
+    const brickmerge = await fetchBrickmergeInfo(setNumber);
+    if (!brickmerge) return lego;
+    return {
+        setNumber,
+        name: lego?.name ?? brickmerge.name,
+        imageUrl: lego?.imageUrl ?? brickmerge.imageUrl,
+        url: lego?.url ?? brickmerge.url,
+        rrp: lego?.rrp ?? brickmerge.rrp
     };
 };

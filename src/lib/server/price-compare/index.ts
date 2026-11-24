@@ -5,7 +5,8 @@ import { createImage } from "$lib/server/image-util";
 import { itemEmitter } from "$lib/server/events/emitters";
 import { ItemEvent } from "$lib/events";
 import { getItemInclusions } from "$lib/server/items";
-import { extractSetNumber, fetchLegoInfo, isLegoUrl } from "./lego";
+import { extractSetNumber, fetchLegoSetInfo, isLegoUrl } from "./lego";
+import { isBlockedTitle, nameFromUrl, queryFromUrl } from "./blocked";
 import { findCheapestOnIdealo, type IdealoOffer } from "./idealo";
 import { fetchShopInfo, type ShopInfo } from "./shop";
 import { getHostname } from "$lib/server/shopping/helpers";
@@ -24,8 +25,10 @@ export const isPriceCompareEnabled = async () => {
 
 /**
  * Enriches a single item:
- *  - LEGO items: UVP (list price) and – if the item has no image yet – the product image from lego.com
+ *  - LEGO items: UVP (list price) and image from lego.com, with brickmerge.de as fallback
+ *  - all shops: image, EAN and own price from the product page
  *  - all items with a recognisable product: cheapest new offer on idealo.de incl. shop name and link
+ *  - names taken from bot-protection pages ("Just a moment...", "Verify your browser") are repaired
  *
  * Never throws; failures are logged and the item is left unchanged.
  * Returns true if anything was written.
@@ -47,14 +50,18 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
             bestPriceRefValue?: number | null;
             bestPriceRefWindow?: string | null;
             imageUrl?: string;
+            name?: string;
         } = {};
+        const nameIsBroken = !item.name.trim() || isBlockedTitle(item.name);
+        let betterName: string | null = null;
         let imageCandidate: string | null = null;
 
         // 1) lego.com: UVP + image
         if (setNumber || isLegoUrl(item.url)) {
-            const lego = await fetchLegoInfo({ url: item.url, setNumber });
+            const lego = await fetchLegoSetInfo({ url: item.url, setNumber });
             if (lego) {
                 setNumber = lego.setNumber;
+                betterName ??= lego.name;
                 if (lego.rrp) {
                     data.rrpValue = lego.rrp.value;
                     data.rrpCurrency = lego.rrp.currency;
@@ -72,11 +79,13 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
         if (item.url && !isLegoUrl(item.url)) {
             shopInfo = await fetchShopInfo(item.url);
             imageCandidate ??= shopInfo?.imageUrl ?? null;
+            betterName ??= shopInfo?.name ?? null;
         }
 
         // 3) idealo.de: cheapest offer + shop link (search by set number, EAN or name)
+        const searchName = nameIsBroken ? (betterName ?? (item.url ? queryFromUrl(item.url) : null) ?? "") : item.name;
         const idealo = await findCheapestOnIdealo({
-            name: item.name || shopInfo?.name || "",
+            name: searchName,
             setNumber,
             gtin: shopInfo?.gtin
         });
@@ -127,6 +136,16 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
             });
         }
         imageCandidate ??= idealo?.imageUrl ?? null;
+        // prefer short, clean names: LEGO set name > idealo product name > shop title > URL
+        const replacement = [
+            setNumber ? betterName : null,
+            idealo?.productTitle,
+            betterName,
+            item.url ? nameFromUrl(item.url) : null
+        ].find((n): n is string => !!n && !isBlockedTitle(n));
+        if (nameIsBroken && replacement) {
+            data.name = replacement.slice(0, 250);
+        }
 
         // 4) image only when the item doesn't have one yet – never overwrite user uploads
         if (!item.imageUrl && imageCandidate) {
@@ -150,6 +169,7 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
                 itemId,
                 setNumber,
                 rrp: data.rrpValue,
+                renamed: data.name,
                 bestPrice: data.bestPriceValue,
                 shop: data.bestPriceShop
             },

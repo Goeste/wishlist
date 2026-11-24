@@ -3,6 +3,7 @@ import metascraperTitle from "metascraper-title";
 import metascraperImage from "metascraper-image";
 import shopping from "$lib/server/shopping";
 import { fetchHtml, extractJsonLd } from "./http";
+import { isBlockedTitle } from "./blocked";
 
 const scraper = metascraper([shopping(), metascraperTitle(), metascraperImage()]);
 
@@ -64,9 +65,10 @@ export const fetchShopInfo = async (url: string): Promise<ShopInfo | null> => {
             ? { value: Math.round(rawPrice * 100), currency: String(md.currency) }
             : null;
 
+    const name = ((md.name as string | undefined) || md.title || null)?.trim() || null;
     return {
         url: resp.url,
-        name: ((md.name as string | undefined) || md.title || null)?.trim() || null,
+        name: isBlockedTitle(name) ? null : name,
         imageUrl: toAbsoluteUrl(md.image, resp.url),
         gtin: extractGtin(resp.body),
         price
