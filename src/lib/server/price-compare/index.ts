@@ -12,6 +12,31 @@ import { fetchShopInfo, type ShopInfo } from "./shop";
 import { getHostname } from "$lib/server/shopping/helpers";
 import { sleep } from "./http";
 
+/** Display names for big shops, so idealo ("Amazon") and our own lookup ("amazon.de") agree */
+const KNOWN_SHOPS: Record<string, string> = {
+    amazon: "Amazon",
+    ebay: "eBay",
+    otto: "OTTO",
+    mediamarkt: "MediaMarkt",
+    saturn: "Saturn",
+    lego: "LEGO",
+    kaufland: "Kaufland",
+    galaxus: "Galaxus",
+    thalia: "Thalia"
+};
+export const shopLabel = (name: string) => {
+    const s = name.trim();
+    const lower = s.toLowerCase().replace(/^www\./, "");
+    const base = lower.match(/^([a-z0-9-]+)\.[a-z.]{2,}$/)?.[1] ?? lower.match(/^([a-z0-9-]+)(?: marketplace)?$/)?.[1];
+    return (base && KNOWN_SHOPS[base]) || s;
+};
+
+/**
+ * An idealo hit found only by name is rejected if it is far cheaper than the shop's own price:
+ * that is almost always a different variant/product, not a bargain.
+ */
+const MIN_PLAUSIBLE_RATIO = 0.6;
+
 /** Pause between items in batch runs, to stay polite towards lego.com / idealo.de */
 const BATCH_DELAY_MS = 2_000;
 const DAY_MS = 24 * 60 * 60 * 1_000;
@@ -35,7 +60,7 @@ export const isPriceCompareEnabled = async () => {
  */
 export const enrichItem = async (itemId: number): Promise<boolean> => {
     try {
-        const item = await client.item.findUnique({ where: { id: itemId } });
+        const item = await client.item.findUnique({ where: { id: itemId }, include: { itemPrice: true } });
         if (!item) return false;
 
         let setNumber = extractSetNumber(item.url, item.name);
@@ -97,7 +122,19 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
 
         // the item's own shop counts as an offer too (backup if idealo finds nothing)
         const offers: IdealoOffer[] = [];
-        if (idealo?.cheapest) offers.push(idealo.cheapest);
+        const reference = shopInfo?.price ?? item.itemPrice;
+        const implausible =
+            idealo?.cheapest &&
+            idealo.matchedBy === "name" &&
+            reference &&
+            reference.currency === idealo.cheapest.currency &&
+            idealo.cheapest.value < reference.value * MIN_PLAUSIBLE_RATIO;
+        if (implausible) {
+            logger.info(
+                { itemId, idealo: idealo.productUrl, price: idealo.cheapest!.value, reference: reference.value },
+                "price-compare: idealo name match ignored, price implausibly low"
+            );
+        } else if (idealo?.cheapest) offers.push(idealo.cheapest);
         if (shopInfo?.price && item.url) {
             offers.push({
                 ...shopInfo.price,
@@ -111,7 +148,8 @@ export const enrichItem = async (itemId: number): Promise<boolean> => {
         // If nothing can be reached/matched, the previous values are kept.
         const now = new Date();
         if (cheapest) {
-            const { value, currency, shop, url } = cheapest;
+            const { value, currency, url } = cheapest;
+            const shop = shopLabel(cheapest.shop);
             data.bestPriceValue = value;
             data.bestPriceCurrency = currency;
             data.bestPriceShop = shop;
